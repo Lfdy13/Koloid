@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koloid Survival – Avoid Coagulation!</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      overflow: hidden;
+      background: linear-gradient(to bottom, #e6f7ff, #b3e0ff);
+      touch-action: none;
+    }
+    
+    canvas {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      max-height: 100vh;
+    }
+    
+    .screen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .container {
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      max-width: 90%;
+      width: 400px;
+      text-align: center;
+    }
+    
+    h1 {
+      color: #2c6fda;
+      margin-bottom: 5px;
+    }
+    
+    h2 {
+      color: #4287f5;
+      font-style: italic;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+    
+    .icon {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background-color: #4287f5;
+      margin: 15px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .inner-icon {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background-color: #6ca6ff;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(0.95); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(0.95); }
+    }
+    
+    button {
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px 0;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 80%;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    button.blue {
+      background-color: #2196f3;
+    }
+    
+    button.blue:hover {
+      background-color: #0b7dda;
+    }
+    
+    button.purple {
+      background-color: #9c27b0;
+    }
+    
+    button.purple:hover {
+      background-color: #7b1fa2;
+    }
+    
+    .instructions {
+      text-align: left;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    
+    .leaderboard {
+      text-align: left;
+      width: 100%;
+    }
+    
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+    }
+    
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
+    .game-info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    
+    .game-over-stats {
+      margin: 20px 0;
+      text-align: center;
+    }
+    
+    .game-over-stats h3 {
+      margin-bottom: 5px;
+    }
+    
+    .game-type-info {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    
+    #submit-score {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+    
+    #name-input {
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      width: 80%;
+    }
+  </style>
+</head>
+<body>
+  <!-- Home Screen -->
+  <div id="home-screen" class="screen">
+    <div class="container">
+      <h1>Koloid Survival</h1>
+      <h2>Avoid Coagulation!</h2>
+      <div class="icon">
+        <div class="inner-icon"></div>
+      </div>
+      <button id="start-btn">Start Game</button>
+      <button id="instructions-btn" class="blue">How to Play</button>
+      <button id="leaderboard-btn" class="purple">Leaderboard</button>
+      <p style="font-size: 12px; margin-top: 20px; color: #666;">Chemistry in action • Version 1.0</p>
+    </div>
+  </div>
+  
+  <!-- Instructions Screen -->
+  <div id="instructions-screen" class="screen hidden">
+    <div class="container">
+      <h1>How to Play</h1>
+      <div class="instructions">
+        <p><strong>You are a colloid particle!</strong> Survive as long as possible by avoiding coagulating ions.</p>
+        <p><strong>Controls:</strong><br>
+        - Desktop: Use arrow keys to move<br>
+        - Mobile: Touch and drag to move</p>
+        <p><strong>Collect:</strong><br>
+        - 🛡️ Stabilizers (blue): Add protection or points<br>
+        - 💧 Water molecules (light blue): Get extra points</p>
+        <p><strong>Avoid:</strong><br>
+        - ⚡ Coagulating ions (red/orange): They will cause your colloid to coagulate!</p>
+        <p>As time progresses, you'll encounter different types of colloids with different properties!</p>
+      </div>
+      <button id="back-from-instructions" class="blue">Back to Menu</button>
+    </div>
+  </div>
+  
+  <!-- Leaderboard Screen -->
+  <div id="leaderboard-screen" class="screen hidden">
+    <div class="container">
+      <h1>Leaderboard</h1>
+      <div id="leaderboard-content" class="leaderboard">
+        <!-- Will be filled dynamically -->
+      </div>
+      <button id="back-from-leaderboard" class="purple">Back to Menu</button>
+    </div>
+  </div>
+  
+  <!-- Game Screen -->
+  <div id="game-screen" class="screen hidden">
+    <div id="game-container">
+      <canvas id="game-canvas"></canvas>
+      <div class="game-info">
+        <div>Score: <span id="score">0</span></div>
+        <div>Time: <span id="time">0s</span></div>
+        <div>Shield: <span id="shield">0</span></div>
+      </div>
+      <div class="game-type-info">
+        <div>Type: <span id="colloid-type">Sol</span></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Game Over Screen -->
+  <div id="game-over-screen" class="screen hidden">
+    <div class="container">
+      <h1>Game Over</h1>
+      <div class="game-over-stats">
+        <h3>Your Score: <span id="final-score">0</span></h3>
+        <h3>Time Survived: <span id="final-time">0s</span></h3>
+      </div>
+      <div id="submit-score">
+        <input type="text" id="name-input" placeholder="Enter your name" maxlength="15">
+        <button id="save-score" class="blue">Save Score</button>
+      </div>
+      <button id="play-again">Play Again</button>
+      <button id="back-to-menu" class="purple">Back to Menu</button>
+    </div>
+  </div>
+
+  <script>
+    // Game variables
+    let canvas, ctx;
+    let gameActive = false;
+    let player = {
+      x: 0,
+      y: 0,
+      radius: 20,
+      shield: 0,
+      color: '#4287f5',
+      innerColor: '#6ca6ff',
+      speed: 5
+    };
+    let enemies = [];
+    let stabilizers = [];
+    let waterDrops = [];
+    let keys = {};
+    let score = 0;
+    let startTime = 0;
+    let currentTime = 0;
+    let difficulty = 1;
+    let colloidTypes = ['Sol', 'Gel', 'Emulsion', 'Aerosol'];
+    let currentColloidType = 0;
+    let touchPosition = null;
+    
+    // Elements
+    const homeScreen = document.getElementById('home-screen');
+    const instructionsScreen = document.getElementById('instructions-screen');
+    const leaderboardScreen = document.getElementById('leaderboard-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const scoreElement = document.getElementById('score');
+    const timeElement = document.getElementById('time');
+    const shieldElement = document.getElementById('shield');
+    const colloidTypeElement = document.getElementById('colloid-type');
+    
+    // Initialize game
+    function initGame() {
+      canvas = document.getElementById('game-canvas');
+      ctx = canvas.getContext('2d');
+      
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+      
+      document.getElementById('start-btn').addEventListener('click', startGame);
+      document.getElementById('instructions-btn').addEventListener('click', showInstructions);
+      document.getElementById('leaderboard-btn').addEventListener('click', showLeaderboard);
+      document.getElementById('back-from-instructions').addEventListener('click', showHome);
+      document.getElementById('back-from-leaderboard').addEventListener('click', showHome);
+      document.getElementById('play-again').addEventListener('click', startGame);
+      document.getElementById('back-to-menu').addEventListener('click', showHome);
+      document.getElementById('save-score').addEventListener('click', saveScore);
+      
+      window.addEventListener('keydown', e => keys[e.key] = true);
+      window.addEventListener('keyup', e => keys[e.key] = false);
+      
+      // Touch events for mobile
+      canvas.addEventListener('touchstart', handleTouchStart);
+      canvas.addEventListener('touchmove', handleTouchMove);
+      canvas.addEventListener('touchend', handleTouchEnd);
+      
+      loadLeaderboard();
+    }
+    
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      
+      if (player) {
+        // Center player if game is just starting
+        if (player.x === 0 && player.y === 0) {
+          player.x = canvas.width / 2;
+          player.y = canvas.height - 100;
+        }
+        
+        // Keep player within bounds after resize
+        player.x = Math.min(Math.max(player.radius, player.x), canvas.width - player.radius);
+        player.y = Math.min(Math.max(player.radius, player.y), canvas.height - player.radius);
+      }
+    }
+    
+    function showScreen(screen) {
+      homeScreen.classList.add('hidden');
+      instructionsScreen.classList.add('hidden');
+      leaderboardScreen.classList.add('hidden');
+      gameScreen.classList.add('hidden');
+      gameOverScreen.classList.add('hidden');
+      
+      screen.classList.remove('hidden');
+    }
+    
+    function showHome() {
+      showScreen(homeScreen);
+      stopGame();
+    }
+    
+    function showInstructions() {
+      showScreen(instructionsScreen);
+    }
+    
+    function showLeaderboard() {
+      showScreen(leaderboardScreen);
+      displayLeaderboard();
+    }
+    
+    function startGame() {
+      resetGame();
+      showScreen(gameScreen);
+      gameActive = true;
+      startTime = Date.now();
+      requestAnimationFrame(gameLoop);
+    }
+    
+    function stopGame() {
+      gameActive = false;
+    }
+    
+    function resetGame() {
+      player.x = canvas.width / 2;
+      player.y = canvas.height - 100;
+      player.shield = 0;
+      player.radius = 20;
+      
+      enemies = [];
+      stabilizers = [];
+      waterDrops = [];
+      
+      score = 0;
+      currentTime = 0;
+      difficulty = 1;
+      currentColloidType = 0;
+      
+      updateGameInfo();
+    }
+    
+    function gameLoop() {
+      if (!gameActive) return;
+      
+      // Update game time
+      currentTime = Math.floor((Date.now() - startTime) / 1000);
+      
+      // Increase difficulty over time
+      difficulty = 1 + (currentTime / 20);
+      
+      // Change colloid type every 30 seconds
+      if (currentTime > 0 && currentTime % 30 === 0 && currentColloidType < colloidTypes.length - 1) {
+        if (Math.floor((Date.now() - startTime) / 1000) !== currentTime + 1) {
+          currentColloidType++;
+          updateColloidType();
+        }
+      }
+      
+      // Clear canvas
+      ctx.fillStyle = getBackgroundColor();
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Spawn enemies and items
+      if (Math.random() < 0.05 * difficulty) {
+        spawnEnemy();
+      }
+      
+      if (Math.random() < 0.01) {
+        spawnStabilizer();
+      }
+      
+      if (Math.random() < 0.02) {
+        spawnWaterDrop();
+      }
+      
+      // Update and draw game objects
+      updatePlayer();
+      updateEnemies();
+      updateStabilizers();
+      updateWaterDrops();
+      
+      drawPlayer();
+      drawEnemies();
+      drawStabilizers();
+      drawWaterDrops();
+      
+      // Update UI
+      updateGameInfo();
+      
+      // Continue the game loop
+      requestAnimationFrame(gameLoop);
+    }
+    
+    function updatePlayer() {
+      // Keyboard movement
+      if (keys['ArrowLeft'] || keys['a']) {
+        player.x -= player.speed;
+      }
+      if (keys['ArrowRight'] || keys['d']) {
+        player.x += player.speed;
+      }
+      if (keys['ArrowUp'] || keys['w']) {
+        player.y -= player.speed;
+      }
+      if (keys['ArrowDown'] || keys['s']) {
+        player.y += player.speed;
+      }
+      
+      // Touch movement
+      if (touchPosition) {
+        const dx = touchPosition.x - player.x;
+        const dy = touchPosition.y - player.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 5) {
+          player.x += (dx / distance) * player.speed;
+          player.y += (dy / distance) * player.speed;
+        }
+      }
+      
+      // Keep player in bounds
+      player.x = Math.min(Math.max(player.radius, player.x), canvas.width - player.radius);
+      player.y = Math.min(Math.max(player.radius, player.y), canvas.height - player.radius);
+    }
+    
+    function updateEnemies() {
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const enemy = enemies[i];
+        
+        // Move enemy
+        enemy.x += enemy.speedX;
+        enemy.y += enemy.speedY;
+        
+        // Remove if out of bounds
+        if (enemy.x < -enemy.radius || enemy.x > canvas.width + enemy.radius ||
+            enemy.y < -enemy.radius || enemy.y > canvas.height + enemy.radius) {
+          enemies.splice(i, 1);
+          continue;
+        }
+        
+        // Check collision with player
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < player.radius + enemy.radius) {
+          if (player.shield > 0) {
+            player.shield--;
+            enemies.splice(i, 1);
+          } else {
+            gameOver();
+            return;
+          }
+        }
+      }
+    }
+    
+    function updateStabilizers() {
+      for (let i = stabilizers.length - 1; i >= 0; i--) {
+        const stabilizer = stabilizers[i];
+        
+        // Move stabilizer
+        stabilizer.y += stabilizer.speed;
+        
+        // Remove if out of bounds
+        if (stabilizer.y > canvas.height + stabilizer.radius) {
+          stabilizers.splice(i, 1);
+          continue;
+        }
+        
+        // Check collision with player
+        const dx = player.x - stabilizer.x;
+        const dy = player.y - stabilizer.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < player.radius + stabilizer.radius) {
+          player.shield += 1;
+          score += 50;
+          stabilizers.splice(i, 1);
+        }
+      }
+    }
+    
+    function updateWaterDrops() {
+      for (let i = waterDrops.length - 1; i >= 0; i--) {
+        const drop = waterDrops[i];
+        
+        // Move water drop
+        drop.y += drop.speed;
+        
+        // Remove if out of bounds
+        if (drop.y > canvas.height + drop.radius) {
+          waterDrops.splice(i, 1);
+          continue;
+        }
+        
+        // Check collision with player
+        const dx = player.x - drop.x;
+        const dy = player.y - drop.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < player.radius + drop.radius) {
+          score += 10;
+          waterDrops.splice(i, 1);
+        }
+      }
+    }
+    
+    function spawnEnemy() {
+      const side = Math.floor(Math.random() * 4);
+      let x, y, speedX, speedY;
+      const radius = 10 + Math.random() * 5;
+      
+      // Spawn from different sides
+      switch (side) {
+        case 0: // top
+          x = Math.random() * canvas.width;
+          y = -radius;
+          speedX = (Math.random() - 0.5) * 2;
+          speedY = 1 + Math.random() * 2 * difficulty;
+          break;
+        case 1: // right
+          x = canvas.width + radius;
+          y = Math.random() * canvas.height;
+          speedX = -(1 + Math.random() * 2 * difficulty);
+          speedY = (Math.random() - 0.5) * 2;
+          break;
+        case 2: // bottom
+          x = Math.random() * canvas.width;
+          y = canvas.height + radius;
+          speedX = (Math.random() - 0.5) * 2;
+          speedY = -(1 + Math.random() * 2 * difficulty);
+          break;
+        case 3: // left
+          x = -radius;
+          y = Math.random() * canvas.height;
+          speedX = 1 + Math.random() * 2 * difficulty;
+          speedY = (Math.random() - 0.5) * 2;
+          break;
+      }
+      
+      // Different enemy types based on charge (Na+, Al3+, etc.)
+      const enemyType = Math.floor(Math.random() * 3);
+      let color;
+      
+      if (enemyType === 0) {
+        color = '#ff5733'; // Na+ (orange)
+      } else if (enemyType === 1) {
+        color = '#ff0000'; // Al3+ (red)
+      } else {
+        color = '#ff8c00'; // Other ion (dark orange)
+      }
+      
+      enemies.push({
+        x,
+        y,
+        radius,
+        speedX,
+        speedY,
+        color,
+        type: enemyType
+      });
+    }
+    
+    function spawnStabilizer() {
+      stabilizers.push({
+        x: Math.random() * (canvas.width - 40) + 20,
+        y: -20,
+        radius: 12,
+        speed: 1.5,
+        color: '#0047ab' // Strong blue for stabilizers
+      });
+    }
+    
+    function spawnWaterDrop() {
+      waterDrops.push({
+        x: Math.random() * (canvas.width - 30) + 15,
+        y: -15,
+        radius: 8,
+        speed: 2,
+        color: '#add8e6' // Light blue for water
+      });
+    }
+    
+    function drawPlayer() {
+      // Outer circle
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fillStyle = player.color;
+      ctx.fill();
+      
+      // Inner circle
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius * 0.7, 0, Math.PI * 2);
+      ctx.fillStyle = player.innerColor;
+      ctx.fill();
+      
+      // Shield indicator if active
+      if (player.shield > 0) {
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius + 5, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+    }
+    
+    function drawEnemies() {
+      enemies.forEach(enemy => {
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+        ctx.fillStyle = enemy.color;
+        ctx.fill();
+        
+        // Add a + symbol for ions
+        ctx.fillStyle = 'white';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        if (enemy.type === 0) {
+          ctx.fillText('+', enemy.x, enemy.y);
+        } else if (enemy.type === 1) {
+          ctx.fillText('3+', enemy.x, enemy.y);
+        } else {
+          ctx.fillText('2+', enemy.x, enemy.y);
+        }
+      });
+    }
+    
+    function drawStabilizers() {
+      stabilizers.forEach(stabilizer => {
+        ctx.beginPath();
+        ctx.arc(stabilizer.x, stabilizer.y, stabilizer.radius, 0, Math.PI * 2);
+        ctx.fillStyle = stabilizer.color;
+        ctx.fill();
+        
+        // Shield symbol
+        ctx.fillStyle = 'white';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🛡️', stabilizer.x, stabilizer.y);
+      });
+    }
+    
+    function drawWaterDrops() {
+      waterDrops.forEach(drop => {
+        ctx.beginPath();
+        ctx.arc(drop.x, drop.y, drop.radius, 0, Math.PI * 2);
+        ctx.fillStyle = drop.color;
+        ctx.fill();
+        
+        // Water symbol
+        ctx.fillStyle = 'rgba(0, 0, 150, 0.8)';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('💧', drop.x, drop.y);
+      });
+    }
+    
+    function updateGameInfo() {
+      scoreElement.textContent = score;
+      timeElement.textContent = currentTime + 's';
+      shieldElement.textContent = player.shield;
+      colloidTypeElement.textContent = colloidTypes[currentColloidType];
+      
+      // Add score for survival time
+      if (gameActive && currentTime > 0) {
+        score = score + 1;
+      }
+    }
+    
+    function updateColloidType() {
+      // Change player appearance and game mechanics based on colloid type
+      switch (colloidTypes[currentColloidType]) {
+        case 'Sol':
+          player.color = '#4287f5';
+          player.innerColor = '#6ca6ff';
+          player.speed = 5;
+          break;
+        case 'Gel':
+          player.color = '#41b03e';
+          player.innerColor = '#7fdca9';
+          player.speed = 4;
+          player.radius = 22;
+          break;
+        case 'Emulsion':
+          player.color = '#f5e842';
+          player.innerColor = '#f7f0a0';
+          player.speed = 5.5;
+          player.radius = 18;
+          break;
+        case 'Aerosol':
+          player.color = '#b342f5';
+          player.innerColor = '#d9a0f7';
+          player.speed = 6;
+          player.radius = 16;
+          break;
+      }
+    }
+    
+    function getBackgroundColor() {
+      switch (colloidTypes[currentColloidType]) {
+        case 'Sol':
+          return '#e6f7ff';
+        case 'Gel':
+          return '#e8f5e9';
+        case 'Emulsion':
+          return '#fffde7';
+        case 'Aerosol':
+          return '#f3e5f5';
+        default:
+          return '#e6f7ff';
+      }
+    }
+    
+    function gameOver() {
+      gameActive = false;
+      
+      document.getElementById('final-score').textContent = score;
+      document.getElementById('final-time').textContent = currentTime + 's';
+      
+      showScreen(gameOverScreen);
+    }
+    
+    function saveScore() {
+      const name = document.getElementById('name-input').value.trim() || 'Anonymous';
+      const leaderboard = getLeaderboard();
+      
+      leaderboard.push({
+        name: name,
+        score: score,
+        time: currentTime,
+        date: new Date().toLocaleDateString()
+      });
+      
+      // Sort by score (highest first)
+      leaderboard.sort((a, b) => b.score - a.score);
+      
+      // Keep only top 10
+      if (leaderboard.length > 10) {
+        leaderboard.length = 10;
+      }
+      
+      localStorage.setItem('koloidLeaderboard', JSON.stringify(leaderboard));
+      
+      // Show updated leaderboard
+      showLeaderboard();
+    }
+    
+    function getLeaderboard() {
+      const leaderboardData = localStorage.getItem('koloidLeaderboard');
+      return leaderboardData ? JSON.parse(leaderboardData) : [];
+    }
+    
+    function loadLeaderboard() {
+      const leaderboard = getLeaderboard();
+      
+      if (leaderboard.length === 0) {
+        // Add some default entries if empty
+        leaderboard.push(
+          { name: 'Prof. Colloid', score: 1200, time: 120, date: '2023-01-01' },
+          { name: 'Chemistry Pro', score: 800, time: 80, date: '2023-01-02' },
+          { name: 'Particle Kid', score: 500, time: 50, date: '2023-01-03' }
+        );
+        localStorage.setItem('koloidLeaderboard', JSON.stringify(leaderboard));
+      }
+    }
+    
+    function displayLeaderboard() {
+      const leaderboard = getLeaderboard();
+      const leaderboardContent = document.getElementById('leaderboard-content');
+      
+      leaderboardContent.innerHTML = '';
+      
+      if (leaderboard.length === 0) {
+        leaderboardContent.innerHTML = '<p>No scores yet!</p>';
+        return;
+      }
+      
+      // Create header
+      const header = document.createElement('div');
+      header.className = 'leaderboard-item';
+      header.innerHTML = '<strong>Name</strong><strong>Score</strong>';
+      leaderboardContent.appendChild(header);
+      
+      // Add entries
+      leaderboard.forEach((entry, index) => {
+        const item = document.createElement('div');
+        item.className = 'leaderboard-item';
+        item.innerHTML = `<div>${index + 1}. ${entry.name}</div><div>${entry.score}</div>`;
+        leaderboardContent.appendChild(item);
+      });
+    }
+    
+    // Touch handlers
+    function handleTouchStart(e) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      touchPosition = {
+        x: touch.clientX,
+        y: touch.clientY
+      };
+    }
+    
+    function handleTouchMove(e) {
+      e.preventDefault();
+      if (!touchPosition) return;
+      
+      const touch = e.touches[0];
+      touchPosition = {
+        x: touch.clientX,
+        y: touch.clientY
+      };
+    }
+    
+    function handleTouchEnd() {
+      touchPosition = null;
+    }
+    
+    // Start the game
+    window.onload = initGame;
+  </script>
+</body>
+</html>
